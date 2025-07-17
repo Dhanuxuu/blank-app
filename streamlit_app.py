@@ -9,8 +9,9 @@ import streamlit as st
 import joblib
 import pandas as pd
 
-# Load model
-model = joblib.load('salary_model.pkl')
+# Load model and dummy columns used in training
+model = joblib.load('model.pkl')
+dummy_columns = joblib.load('dummy_columns.pkl')  # You should save this during training
 
 # User input
 st.title("Employee Salary Predictor")
@@ -20,7 +21,7 @@ education = st.selectbox("Education Level", ["Bachelors", "Masters", "PhD"])
 job_title = st.text_input("Job Title")
 experience = st.number_input("Years of Experience", min_value=0.0)
 
-# Preprocess input
+# Input to dataframe
 input_df = pd.DataFrame({
     'age': [age],
     'gender': [gender],
@@ -29,8 +30,18 @@ input_df = pd.DataFrame({
     'experience': [experience]
 })
 
+# One-hot encode using same training logic
+input_df = pd.get_dummies(input_df)
+
+# Add any missing columns that existed in training
+for col in dummy_columns:
+    if col not in input_df.columns:
+        input_df[col] = 0
+
+# Reorder columns to match training
+input_df = input_df[dummy_columns]
+
 # Predict
 if st.button("Predict Salary"):
-    # You may need to apply encoding/scaling here
     salary = model.predict(input_df)[0]
     st.success(f"Predicted Salary: ${salary:,.2f}")
